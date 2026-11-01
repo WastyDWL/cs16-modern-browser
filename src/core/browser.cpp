@@ -14,9 +14,6 @@ namespace nc {
 
 namespace {
 
-// vgui2::HTML sends delta * 100 / 1.5 per notch; Chromium expects 120 per notch.
-int wheel_to_cef(int delta) { return delta * 9 / 5; }
-
 std::string error_page(const ErrorStrings& e, const std::string& detail) {
     return "<html><head><meta charset=\"utf-8\"><title>" + e.title + "</title></head><body><h1>" + e.header +
            "</h1>" + detail + "</body></html>";
@@ -165,7 +162,7 @@ void Browser::mouse_wheel(int delta) {
     e.x = mouse_x_;
     e.y = mouse_y_;
     e.modifiers = mouse_flags(mods_, buttons_[MBT_LEFT], buttons_[MBT_MIDDLE], buttons_[MBT_RIGHT]);
-    h->SendMouseWheelEvent(e, 0, wheel_to_cef(delta));
+    h->SendMouseWheelEvent(e, 0, wheel_delta(delta));
 }
 
 void Browser::mouse_move(int x, int y) {

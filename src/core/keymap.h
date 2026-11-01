@@ -21,5 +21,7 @@ cef_mouse_button_type_t mouse_button(int code);
 uint32_t mouse_flags(int vgui_mods, bool left, bool middle, bool right);
 // CEF cursor -> vgui2::CursorCode (what IHTMLResponses_HL1::BrowserSetCursor expects).
 int vgui_cursor(cef_cursor_type_t type);
+// Serializer MouseWheel delta -> Chromium wheel delta (120 per notch).
+int wheel_delta(int vgui_delta);
 
 }  // namespace nc

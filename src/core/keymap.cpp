@@ -70,4 +70,10 @@ int vgui_cursor(cef_cursor_type_t type) {
     }
 }
 
+int wheel_delta(int d) {
+    // HL1's client.dll sends notches (+-1, a few at most); SDK-built panels send d * 100 / 1.5.
+    if (d >= -10 && d <= 10) return d * 120;
+    return d * 9 / 5;
+}
+
 }  // namespace nc

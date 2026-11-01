@@ -68,3 +68,15 @@ TEST(cursor_mapping) {
     CHECK_EQ(vgui_cursor(CT_NONE), 15);      // dc_blank
     CHECK_EQ(vgui_cursor(CT_COPY), 2);       // anything unmapped -> arrow
 }
+
+TEST(wheel_notches_from_hl1_client) {
+    // HL1's client.dll passes raw notches (+-1); Chromium wants 120 per notch.
+    CHECK_EQ(wheel_delta(-1), -120);
+    CHECK_EQ(wheel_delta(2), 240);
+}
+
+TEST(wheel_scaled_values_from_sdk_panels) {
+    // vgui_controls built from the SDK send delta * 100 / 1.5 (66 per notch).
+    CHECK_EQ(wheel_delta(66), 118);
+    CHECK_EQ(wheel_delta(-133), -239);
+}
