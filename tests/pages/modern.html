@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>pending</title>
+<style>
+  :root { --bg: #14161d; --card: #1e2230; --accent: #ff4d4f; --text: #e8eaf0; --gap: 16px; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: system-ui, "Segoe UI", sans-serif; background: var(--bg); color: var(--text); }
+  header { display: flex; align-items: center; justify-content: space-between; padding: var(--gap);
+           background: linear-gradient(90deg, #1b1f2b, #2a1f3a); }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: var(--gap);
+          padding: var(--gap); }
+  .card { background: var(--card); border-radius: 12px; padding: 14px; aspect-ratio: 4 / 3;
+          box-shadow: 0 8px 24px rgb(0 0 0 / .35); }
+  .card:has(.hot) { outline: 2px solid var(--accent); }
+  .btn { background: var(--accent); color: #fff; border: 0; border-radius: 8px; padding: 8px 14px; }
+  #result { font-size: 28px; font-weight: 700; padding: var(--gap); }
+  .pass { color: #3ddc84; } .fail { color: var(--accent); }
+</style>
+</head>
+<body>
+<header><b>nextchromium · проверка движка</b><button class="btn">Играть ↗</button></header>
+<div class="grid">
+  <div class="card"><span class="hot">flex + grid + :has()</span></div>
+  <div class="card">CSS-переменные</div>
+  <div class="card">aspect-ratio</div>
+  <div class="card">Кириллица: Эпицентр Арена</div>
+</div>
+<div id="result">…</div>
+<ul id="checks"></ul>
+<script type="module">
+  const checks = {
+    'CSS grid': CSS.supports('display', 'grid'),
+    'CSS :has()': CSS.supports('selector(:has(a))'),
+    'CSS variables': CSS.supports('color', 'var(--x)'),
+    'aspect-ratio': CSS.supports('aspect-ratio', '1/1'),
+    'optional chaining': (() => ({ a: { b: 1 } })?.a?.b === 1)(),
+    'Array.at': [1, 2, 3].at(-1) === 3,
+    'structuredClone': typeof structuredClone === 'function',
+    'fetch': typeof fetch === 'function',
+  };
+  const ok = Object.values(checks).every(Boolean);
+  const res = document.getElementById('result');
+  res.textContent = ok ? 'PASS' : 'FAIL';
+  res.className = ok ? 'pass' : 'fail';
+  document.getElementById('checks').innerHTML =
+    Object.entries(checks).map(([k, v]) => `<li>${v ? '✔' : '✘'} ${k}</li>`).join('');
+  document.title = ok ? 'PASS' : 'FAIL';
+</script>
+</body>
+</html>
