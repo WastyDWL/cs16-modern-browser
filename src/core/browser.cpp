@@ -41,11 +41,12 @@ CefRefPtr<CefBrowser> Browser::cef_browser() {
     return browser_;
 }
 
-void Browser::create(const std::string&) {
+void Browser::create(int frame_rate, double zoom_level) {
+    zoom_level_ = zoom_level;
     CefWindowInfo info;
     info.SetAsWindowless(nullptr);
     CefBrowserSettings settings;
-    settings.windowless_frame_rate = 60;
+    settings.windowless_frame_rate = frame_rate;
     settings.background_color = CefColorSetARGB(0, 0, 0, 0);
     CefBrowserHost::CreateBrowser(info, this, "about:blank", settings, nullptr, nullptr);
 }
@@ -309,6 +310,7 @@ void Browser::OnAfterCreated(CefRefPtr<CefBrowser> browser) {
         return;
     }
     browser->GetHost()->WasResized();
+    browser->GetHost()->SetZoomLevel(zoom_level_);
     if (!url.empty()) load(url, post);
     CefRefPtr<Browser> self(this);
     queue_.post([self] {
@@ -332,6 +334,8 @@ void Browser::OnBeforeClose(CefRefPtr<CefBrowser>) {
 // --- CefLoadHandler ---
 
 void Browser::OnLoadingStateChange(CefRefPtr<CefBrowser> browser, bool loading, bool back, bool forward) {
+    // Chromium keeps zoom per origin; re-apply ours whenever a page starts loading.
+    if (loading && browser->GetHost()->GetZoomLevel() != zoom_level_) browser->GetHost()->SetZoomLevel(zoom_level_);
     to_game([back, forward](IHTMLResponses_HL1* t) { t->BrowserCanGoBackandForward(back, forward); });
     if (loading) {
         to_game([](IHTMLResponses_HL1* t) { t->BrowserLoadingResource(); });

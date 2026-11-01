@@ -39,6 +39,7 @@ public:
 
 private:
     bool running_ = false;
+    Config config_;
     int next_id_ = 1;
     MainThreadQueue queue_;
     std::map<const void*, CefRefPtr<Browser>> browsers_;

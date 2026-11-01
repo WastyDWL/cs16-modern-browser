@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <charconv>
+#include <cmath>
 #include <fstream>
 #include <sstream>
 
@@ -50,10 +51,13 @@ Config parse_config(std::string_view ini_text, std::wstring_view cmdline) {
         if (key == "enabled") c.enabled = to_int(value, 1) != 0;
         else if (key == "frame_rate") c.frame_rate = std::clamp(to_int(value, 60), 1, 240);
         else if (key == "debug_port") c.debug_port = std::clamp(to_int(value, 0), 0, 65535);
+        else if (key == "zoom") c.zoom_percent = std::clamp(to_int(value, 90), 25, 300);
     }
     if (has_switch(cmdline, L"-nonextchromium")) c.enabled = false;
     return c;
 }
+
+double zoom_level(int percent) { return std::log(percent / 100.0) / std::log(1.2); }
 
 Config load_config(const std::wstring& ini_path, std::wstring_view cmdline) {
     std::ifstream f(ini_path, std::ios::binary);

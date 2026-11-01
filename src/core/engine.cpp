@@ -68,6 +68,7 @@ bool Engine::init(const EngineOptions& opts) {
         return false;
     }
     running_ = true;
+    config_ = opts.config;
     log("CEF %s initialized", CEF_VERSION);
     return true;
 }
@@ -112,7 +113,7 @@ Browser* Engine::get_or_create(const void* key, IHTMLResponses_HL1* target) {
     CefRefPtr<Browser> b = new Browser(next_id_++, target, queue_);
     browsers_[key] = b;
     log("browser %d: new for serializer %p, target %p", next_id_ - 1, key, target);
-    b->create("");
+    b->create(config_.frame_rate, zoom_level(config_.zoom_percent));
     return b.get();
 }
 

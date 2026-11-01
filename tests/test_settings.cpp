@@ -1,3 +1,5 @@
+#include <cmath>
+
 #include "core/config.h"
 #include "core/domains.h"
 #include "testing.h"
@@ -53,4 +55,18 @@ TEST(config_frame_rate_clamped) {
     CHECK_EQ(c.frame_rate, 1);
     Config d = parse_config("[main]\nframe_rate=1000\n", L"");
     CHECK_EQ(d.frame_rate, 240);
+}
+
+TEST(config_zoom_default_and_clamp) {
+    CHECK_EQ(parse_config("", L"").zoom_percent, 90);
+    CHECK_EQ(parse_config("[main]\nzoom=75\n", L"").zoom_percent, 75);
+    CHECK_EQ(parse_config("[main]\nzoom=5\n", L"").zoom_percent, 25);
+    CHECK_EQ(parse_config("[main]\nzoom=900\n", L"").zoom_percent, 300);
+}
+
+TEST(zoom_percent_to_chromium_level) {
+    // Chromium zoom level: scale = 1.2 ^ level
+    CHECK(std::abs(zoom_level(100)) < 1e-9);
+    CHECK(std::abs(zoom_level(120) - 1.0) < 1e-9);
+    CHECK(std::abs(std::pow(1.2, zoom_level(90)) - 0.9) < 1e-9);
 }

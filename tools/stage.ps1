@@ -27,6 +27,8 @@ if (-not (Test-Path $ini)) {
 enabled=1
 ; frames per second the pages are rendered at (1-240)
 frame_rate=60
+; page scale in percent (25-300); 90 fits typical MOTD pages into the 720px window
+zoom=90
 ; Chrome DevTools at http://127.0.0.1:<port> (0 = off)
 debug_port=0
 "@
