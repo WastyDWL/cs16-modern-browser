@@ -2,7 +2,7 @@
 add_library(nc_core STATIC
   keymap.cpp view_math.cpp domains.cpp config.cpp
   main_thread_queue.cpp frame_buffer.cpp navigation_gate.cpp
-  browser.cpp engine.cpp cef_loader.cpp vgui_panel.cpp
+  browser.cpp engine.cpp cef_loader.cpp vgui_panel.cpp js_api.cpp api_router.cpp api_scheme.cpp game_bridge.cpp
 )
 target_include_directories(nc_core PUBLIC ${CMAKE_SOURCE_DIR}/src ${CEF_INCLUDE_PATH})
 target_link_libraries(nc_core PUBLIC nc_common libcef_dll_wrapper ${CEF_LIB_RELEASE} delayimp)

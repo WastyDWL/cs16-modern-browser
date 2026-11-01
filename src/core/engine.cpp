@@ -3,6 +3,8 @@
 #include <windows.h>
 
 #include "common/log.h"
+#include "common/ncb_scheme.h"
+#include "core/api_router.h"
 #include "include/cef_app.h"
 #include "include/cef_cookie.h"
 #include "include/cef_version.h"
@@ -13,6 +15,7 @@ namespace {
 
 class BrowserApp final : public CefApp, public CefBrowserProcessHandler {
 public:
+    void OnRegisterCustomSchemes(CefRawPtr<CefSchemeRegistrar> registrar) override { register_ncb_scheme(registrar); }
     CefRefPtr<CefBrowserProcessHandler> GetBrowserProcessHandler() override { return this; }
 
     void OnBeforeCommandLineProcessing(const CefString& process_type, CefRefPtr<CefCommandLine> cmd) override {
@@ -69,6 +72,11 @@ bool Engine::init(const EngineOptions& opts) {
     }
     running_ = true;
     config_ = opts.config;
+    register_api_scheme_handler();
+    std::wstring game_dir = opts.mod_dir.substr(0, opts.mod_dir.find_last_of(L"\\/"));
+    if (!domains_.load(game_dir + L"\\platform\\accepted_domains.txt"))
+        log("no platform\\accepted_domains.txt: privileged nextclient.* calls are denied");
+    bridge_.attach();
     log("CEF %s initialized", CEF_VERSION);
     return true;
 }
@@ -94,6 +102,18 @@ void Engine::shutdown() {
 
 void Engine::run_frame() {
     queue_.drain();
+    if (!bridge_.attached() && ++frames_ % 120 == 0) bridge_.attach();
+    for (const GameEvent& ev : bridge_.poll()) {
+        std::string js = dispatch_script(ev.target, ev.type, ev.detail_json);
+        for (auto& [key, b] : browsers_) {
+            CefRefPtr<CefBrowser> cb = b->cef_browser();
+            if (!cb) continue;
+            std::vector<CefString> ids;
+            cb->GetFrameIdentifiers(ids);
+            for (auto& id : ids)
+                if (auto f = cb->GetFrameByIdentifier(id)) f->ExecuteJavaScript(js, f->GetURL(), 0);
+        }
+    }
     // The game may remove panels from inside BrowserNeedsPaint, so iterate over a copy.
     std::vector<CefRefPtr<Browser>> live;
     live.reserve(browsers_.size());
@@ -140,6 +160,10 @@ void Engine::set_cookie(const char* host, const char* key, const char* value, co
     }
     std::string url = std::string("https://") + (host[0] == '.' ? host + 1 : host) + "/";
     CefCookieManager::GetGlobalManager(nullptr)->SetCookie(url, c, nullptr);
+}
+
+ApiResult Engine::handle_api(const ApiCall& call, const std::string& frame_url) {
+    return route_api(call, frame_url, domains_, bridge_);
 }
 
 void Engine::set_frame_rate(int fps) {

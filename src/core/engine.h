@@ -7,7 +7,10 @@
 #include <vector>
 
 #include "common/valve_html.h"
+#include "core/api_scheme.h"
 #include "core/browser.h"
+#include "core/domains.h"
+#include "core/game_bridge.h"
 #include "core/config.h"
 #include "core/main_thread_queue.h"
 
@@ -34,12 +37,17 @@ public:
     void remove(const void* key);
     void set_cookie(const char* host, const char* key, const char* value, const char* path, uint32_t expires);
     void set_frame_rate(int fps);
+    // A window.nextclient call from a page whose frame is at frame_url.
+    ApiResult handle_api(const ApiCall& call, const std::string& frame_url);
 
     MainThreadQueue& queue() { return queue_; }
 
 private:
     bool running_ = false;
     Config config_;
+    Domains domains_;
+    GameBridge bridge_;
+    unsigned frames_ = 0;
     int next_id_ = 1;
     MainThreadQueue queue_;
     std::map<const void*, CefRefPtr<Browser>> browsers_;

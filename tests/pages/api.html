@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="ru">
+<head><meta charset="utf-8"><title>pending</title>
+<style>body{font:14px system-ui;background:#14161d;color:#e8eaf0;padding:12px} .ok{color:#3ddc84} .bad{color:#ff4d4f}</style>
+</head>
+<body>
+<h3>window.nextclient</h3>
+<ul id="out"></ul>
+<script>
+  // Run outside the game (harness): the API exists, game-backed values are empty, and
+  // privileged calls are refused for this file:// page.
+  (async () => {
+    const results = [];
+    const check = (name, ok) => results.push([name, !!ok]);
+    const nc = window.nextclient;
+    check('nextclient exists', typeof nc === 'object');
+    check('exec is a function', typeof nc.exec === 'function');
+    check('makeAsEventTarget global', typeof window.makeAsEventTarget === 'function');
+    check('getCvarValue -> null without game', nc.getCvarValue('name') === null);
+    check('connectedHost -> null without game', nc.connectedHost === null);
+    check('gameUi.shown -> false', nc.gameUi.shown === false);
+    check('exec refused for untrusted page', nc.exec('quit') === null);
+    let r = await fetch('ncb://api/gameUiShown');
+    check('ncb://api round trip 200', r.status === 200 && (await r.json()) === false);
+    r = await fetch('ncb://api/exec?a=quit');
+    check('exec via fetch -> 403', r.status === 403);
+    r = await fetch('ncb://api/nope');
+    check('unknown method -> 404', r.status === 404);
+    let got = null;
+    nc.addEventListener('connect', e => (got = e.detail));
+    nc.dispatchEvent('connect', { address: '1.2.3.4:27015' });
+    check('events carry detail', got && got.address === '1.2.3.4:27015');
+    let gotUi = false;
+    nc.gameUi.addEventListener('show', () => (gotUi = true));
+    nc.gameUi.dispatchEvent('show');
+    check('gameUi events', gotUi);
+    const mm = await nc.matchmaking.getServerInfo('1.2.3.4:27015').then(() => 'resolved', () => 'rejected');
+    check('matchmaking rejects (not available)', mm === 'rejected');
+
+    document.getElementById('out').innerHTML =
+      results.map(([n, ok]) => `<li class="${ok ? 'ok' : 'bad'}">${ok ? '✔' : '✘'} ${n}</li>`).join('');
+    const failed = results.filter(([, ok]) => !ok).map(([n]) => n);
+    document.title = failed.length ? 'FAIL: ' + failed.join('; ') : 'PASS';
+  })().catch(e => (document.title = 'FAIL: ' + e));
+</script>
+</body>
+</html>
