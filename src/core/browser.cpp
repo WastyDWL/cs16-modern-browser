@@ -341,9 +341,12 @@ bool Browser::DoClose(CefRefPtr<CefBrowser>) {
 }
 
 void Browser::OnBeforeClose(CefRefPtr<CefBrowser>) {
-    std::lock_guard lock(mutex_);
-    browser_ = nullptr;
-    dialog_ = nullptr;
+    {
+        std::lock_guard lock(mutex_);
+        browser_ = nullptr;
+        dialog_ = nullptr;
+    }
+    finished_ = true;
 }
 
 // --- CefLoadHandler ---
@@ -434,12 +437,13 @@ bool Browser::OnCursorChange(CefRefPtr<CefBrowser>, CefCursorHandle, cef_cursor_
 bool Browser::OnBeforeBrowse(CefRefPtr<CefBrowser>, CefRefPtr<CefFrame> frame, CefRefPtr<CefRequest> request,
                              bool user_gesture, bool is_redirect) {
     std::string url = request->GetURL().ToString();
-    bool allow;
+    bool allow, ask_game;
     {
         std::lock_guard lock(mutex_);
         allow = gate_.on_before_browse(url, user_gesture, is_redirect, frame->IsMain());
+        ask_game = !allow && !gate_.pending().empty();
     }
-    if (!allow)
+    if (ask_game)
         to_game([url](IHTMLResponses_HL1* t) { t->BrowserStartRequest(url.c_str(), "", "", false); });
     return !allow;  // true cancels
 }

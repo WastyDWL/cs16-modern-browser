@@ -69,6 +69,9 @@ public:
     CefRefPtr<CefResourceHandler> Create(CefRefPtr<CefBrowser>, CefRefPtr<CefFrame> frame, const CefString&,
                                          CefRefPtr<CefRequest> request) override {
         // Trust is decided by the URL of the frame that made the call, never by the page's JS.
+        // Only XHR/fetch: for a navigation (redirect, top.location) the frame URL would still be
+        // the previous, possibly trusted, page.
+        if (!api_resource_type_allowed(request->GetResourceType())) return new ApiHandler("", "");
         return new ApiHandler(request->GetURL().ToString(), frame ? frame->GetURL().ToString() : "");
     }
 

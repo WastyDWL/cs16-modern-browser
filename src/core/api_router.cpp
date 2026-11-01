@@ -1,8 +1,19 @@
 #include "core/api_router.h"
 
+#include <cctype>
 #include <set>
 
 namespace nc {
+
+namespace {
+
+// Any page may call getCvarValue (as in NextClient), so passwords stay hidden.
+bool secret_cvar(std::string name) {
+    for (char& c : name) c = static_cast<char>(tolower(static_cast<unsigned char>(c)));
+    return name.find("password") != std::string::npos || name.find("_pw") != std::string::npos;
+}
+
+}  // namespace
 
 ApiResult route_api(const ApiCall& call, const std::string& frame_url, const Domains& domains, GameApi& game) {
     const std::string& m = call.method;
@@ -13,6 +24,7 @@ ApiResult route_api(const ApiCall& call, const std::string& frame_url, const Dom
         return {200, "true"};
     }
     if (m == "getCvarValue") {
+        if (secret_cvar(call.arg)) return {200, "null"};
         std::optional<std::string> v = game.cvar(call.arg);
         return {200, v ? json_string(*v) : "null"};
     }

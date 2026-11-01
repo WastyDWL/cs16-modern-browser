@@ -51,7 +51,7 @@ void FrameBuffer::deliver_if_ready(const DeliverFn& deliver) {
         // Clip the popup (a <select> dropdown) against the view and the popup's own buffer.
         int x0 = std::max(px_, 0), y0 = std::max(py_, 0);
         int x1 = std::min({px_ + prw_, px_ + pw_, w_}), y1 = std::min({py_ + prh_, py_ + ph_, h_});
-        for (int y = y0; y < y1; ++y)
+        for (int y = y0; x1 > x0 && y < y1; ++y)
             std::memcpy(&out_[static_cast<size_t>(y) * w_ + x0],
                         &popup_[static_cast<size_t>(y - py_) * pw_ + (x0 - px_)], static_cast<size_t>(x1 - x0) * 4);
     }

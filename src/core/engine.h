@@ -11,6 +11,7 @@
 #include "core/browser.h"
 #include "core/domains.h"
 #include "core/game_bridge.h"
+#include "core/panel_registry.h"
 #include "core/config.h"
 #include "core/main_thread_queue.h"
 
@@ -34,6 +35,10 @@ public:
     void run_frame();
     Browser* find(const void* key);
     Browser* get_or_create(const void* key, IHTMLResponses_HL1* target);
+    // CreateBrowser from the game: always gets a browser.
+    Browser* create_for_panel(const void* key, IHTMLResponses_HL1* target);
+    // Any other serializer call: creates one only for panels the game has not removed.
+    Browser* lazy_for_panel(const void* key, IHTMLResponses_HL1* target);
     void remove(const void* key);
     void set_cookie(const char* host, const char* key, const char* value, const char* path, uint32_t expires);
     void set_frame_rate(int fps);
@@ -47,6 +52,7 @@ private:
     Config config_;
     Domains domains_;
     GameBridge bridge_;
+    PanelRegistry panels_;
     unsigned frames_ = 0;
     int next_id_ = 1;
     MainThreadQueue queue_;

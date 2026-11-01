@@ -1,8 +1,11 @@
 #include "navigation_gate.h"
 
+#include <cstring>
+
 namespace nc {
 
 bool NavigationGate::on_before_browse(const std::string& url, bool user_gesture, bool is_redirect, bool main_frame) {
+    if (_strnicmp(url.c_str(), "ncb:", 4) == 0) return false;  // the API scheme is not a page
     if (!main_frame || is_redirect) return true;
     if (allowed_ > 0) {  // our own PostURL or a navigation the game already approved
         --allowed_;

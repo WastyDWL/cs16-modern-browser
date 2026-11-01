@@ -62,6 +62,9 @@ public:
     void request_sizes();
     void deliver_frame();  // called every RunFrame
     bool closed() const { return closed_.load(); }
+    // True once CEF has destroyed the browser (OnBeforeClose). A browser still being created is
+    // not finished: CefShutdown must not run while it exists.
+    bool finished() const { return finished_.load(); }
     CefRefPtr<CefBrowser> cef_browser();
 
     // --- CefClient ---
@@ -141,6 +144,7 @@ private:
     IHTMLResponses_HL1* target_;  // main thread only
     MainThreadQueue& queue_;
     std::atomic<bool> closed_{false};
+    std::atomic<bool> finished_{false};
 
     mutable std::mutex mutex_;  // guards everything below
     CefRefPtr<CefBrowser> browser_;

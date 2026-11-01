@@ -35,7 +35,7 @@ IHTMLResponses_HL1* target_of(void* ser) {
     return t;
 }
 
-Browser* browser_of(void* ser) { return Engine::get().get_or_create(ser, target_of(ser)); }
+Browser* browser_of(void* ser) { return Engine::get().lazy_for_panel(ser, target_of(ser)); }
 
 // IHTMLResponses* handed to CreateBrowser/RemoveBrowser is the HTMLSerializer object (+0);
 // our key is its IHTMLSerializer subobject (+4).
@@ -59,7 +59,7 @@ void __fastcall c_set_cookie(void*, void*, const char* host, const char* key, co
 }
 void __fastcall c_create_browser(void*, void*, IHTMLResponses* r, bool, const char*) {
     void* key = key_of(r);
-    Engine::get().get_or_create(key, target_of(key));
+    Engine::get().create_for_panel(key, target_of(key));
 }
 void __fastcall c_remove_browser(void*, void*, IHTMLResponses* r) { Engine::get().remove(key_of(r)); }
 void __fastcall c_set_fps(void*, void*, uint32_t fps) { Engine::get().set_frame_rate(static_cast<int>(fps)); }

@@ -10,6 +10,8 @@
 #include <string_view>
 #include <vector>
 
+#include "include/internal/cef_types.h"
+
 namespace nc {
 
 struct ApiCall {
@@ -18,6 +20,8 @@ struct ApiCall {
 };
 
 std::optional<ApiCall> parse_api_url(std::string_view url);
+// ncb://api answers only XHR and fetch; navigations to it are refused.
+bool api_resource_type_allowed(cef_resource_type_t type);
 // JSON string literal; also escapes < and > so it is safe inside inline script.
 std::string json_string(std::string_view utf8);
 

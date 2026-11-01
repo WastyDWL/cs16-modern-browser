@@ -90,7 +90,7 @@ void Engine::shutdown() {
     browsers_.clear();
     // CefShutdown requires every browser to be closed first.
     for (int i = 0; i < 300; ++i) {
-        std::erase_if(closing_, [](auto& b) { return !b->cef_browser(); });
+        std::erase_if(closing_, [](auto& b) { return b->finished(); });
         if (closing_.empty()) break;
         Sleep(10);
     }
@@ -119,7 +119,7 @@ void Engine::run_frame() {
     live.reserve(browsers_.size());
     for (auto& [key, b] : browsers_) live.push_back(b);
     for (auto& b : live) b->deliver_frame();
-    std::erase_if(closing_, [](auto& b) { return !b->cef_browser(); });
+    std::erase_if(closing_, [](auto& b) { return b->finished(); });
 }
 
 Browser* Engine::find(const void* key) {
@@ -137,7 +137,18 @@ Browser* Engine::get_or_create(const void* key, IHTMLResponses_HL1* target) {
     return b.get();
 }
 
+Browser* Engine::create_for_panel(const void* key, IHTMLResponses_HL1* target) {
+    panels_.created(key);
+    return get_or_create(key, target);
+}
+
+Browser* Engine::lazy_for_panel(const void* key, IHTMLResponses_HL1* target) {
+    if (Browser* b = find(key)) return b;
+    return panels_.lazy_allowed(key) ? get_or_create(key, target) : nullptr;
+}
+
 void Engine::remove(const void* key) {
+    panels_.removed(key);
     auto it = browsers_.find(key);
     if (it == browsers_.end()) return;
     it->second->close();

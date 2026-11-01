@@ -50,6 +50,8 @@ inline void fail(const char* file, int line, const std::string& msg) {
     static nctest::Registrar NC_CAT(reg_, name)(#name, &name);                       \
     static void name()
 
+#undef CHECK  // CEF headers (base/cef_logging.h) define their own
+#undef CHECK_EQ
 #define CHECK(cond) \
     do { if (!(cond)) nctest::fail(__FILE__, __LINE__, "CHECK(" #cond ")"); } while (0)
 

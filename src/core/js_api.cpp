@@ -156,4 +156,6 @@ std::string dispatch_script(std::string_view target, std::string_view type, std:
 
 const char* api_script() { return kApiScript; }
 
+bool api_resource_type_allowed(cef_resource_type_t type) { return type == RT_XHR; }  // fetch() reports RT_XHR too
+
 }  // namespace nc
