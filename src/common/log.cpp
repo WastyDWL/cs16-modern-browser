@@ -15,7 +15,10 @@ FILE* g_file = nullptr;
 void log_open(const wchar_t* path, bool truncate) {
     std::lock_guard lock(g_mutex);
     if (g_file) return;
-    g_file = _wfsopen(path, truncate ? L"w" : L"a", _SH_DENYNO);
+    if (truncate)
+        if (FILE* f = _wfsopen(path, L"w", _SH_DENYNO)) std::fclose(f);
+    // Append mode: the .asi and nextchromium.dll write to the same file through separate handles.
+    g_file = _wfsopen(path, L"a", _SH_DENYNO);
 }
 
 void log(const char* fmt, ...) {

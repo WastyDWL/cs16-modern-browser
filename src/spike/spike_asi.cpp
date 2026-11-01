@@ -153,8 +153,12 @@ int __fastcall s_get_index(void* self, void*) {
 }
 void __fastcall s_post_url(void* self, void*, const char* u, const char* p) {
     nc::log("SV.PostURL %p %s from %s", self, u ? u : "", module_of(_ReturnAddress()).c_str());
-    static bool dumped = false;
-    if (!dumped) { dumped = true; dump_object(self); }
+    static bool wrapped = false;
+    if (!wrapped) {  // log what the original sends to the panel
+        wrapped = true;
+        auto** slot = reinterpret_cast<IHTMLResponses_HL1**>(static_cast<char*>(self) + 0xC);
+        *slot = make_log_responses(*slot);
+    }
     sorig<void(__thiscall*)(void*, const char*, const char*)>(3)(self, u, p);
 }
 void __fastcall s_size(void* self, void*, int w, int h) {
@@ -164,7 +168,7 @@ void __fastcall s_size(void* self, void*, int w, int h) {
 void __fastcall s_paint_resp(void* self, void*, int t) {
     static std::atomic<int> n{0};
     if (++n <= 5) nc::log("SV.NeedsPaintResponse %p %d", self, t);
-    sorig<void(__thiscall*)(void*, int)>(24)(self, t);
+    sorig<void(__thiscall*)(void*, int)>(23)(self, t);
 }
 void __fastcall s_keychar(void* self, void*, int c) {
     nc::log("SV.KeyChar %p %d", self, c);
@@ -180,17 +184,17 @@ void patch_serializer_class(HMODULE m) {
     nc::log("HTMLSerializer IHTMLSerializer vtable(off 4) = %p", vt);
     for (uint32_t off : {4u, 8u, 12u}) nc::log("  vtable(off %u) = %p", off, find_vtable(m, ".?AVHTMLSerializer@@", off));
     if (!vt) return;
-    g_ser_vtbl_orig = new void*[29];
-    memcpy(g_ser_vtbl_orig, vt, sizeof(void*) * 29);
+    g_ser_vtbl_orig = new void*[28];
+    memcpy(g_ser_vtbl_orig, vt, sizeof(void*) * 28);
     DWORD old;
-    VirtualProtect(vt, sizeof(void*) * 29, PAGE_READWRITE, &old);
+    VirtualProtect(vt, sizeof(void*) * 28, PAGE_READWRITE, &old);
     vt[1] = reinterpret_cast<void*>(&s_get_index);
     vt[3] = reinterpret_cast<void*>(&s_post_url);
     vt[14] = reinterpret_cast<void*>(&s_size);
     vt[17] = reinterpret_cast<void*>(&s_keychar);
     vt[18] = reinterpret_cast<void*>(&s_run_js);
-    vt[24] = reinterpret_cast<void*>(&s_paint_resp);
-    VirtualProtect(vt, sizeof(void*) * 29, old, &old);
+    vt[23] = reinterpret_cast<void*>(&s_paint_resp);
+    VirtualProtect(vt, sizeof(void*) * 28, old, &old);
     nc::log("patched HTMLSerializer class vtable");
 }
 

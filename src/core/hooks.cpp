@@ -16,7 +16,7 @@ namespace nc {
 namespace {
 
 constexpr int kControllerSlots = 15;
-constexpr int kSerializerSlots = 29;
+constexpr int kSerializerSlots = 28;
 constexpr uint32_t kSerializerTargetOffset = 0xC;  // IHTMLResponses_HL1* inside the IHTMLSerializer subobject
 
 void** g_ctl_orig = nullptr;  // original CHTMLController vtable
@@ -48,6 +48,8 @@ void __fastcall c_shutdown(void* self, void*) {
     ctl_orig<void(__thiscall*)(void*)>(2)(self);
 }
 bool __fastcall c_run_frame(void*, void*) {
+    static int n = 0;
+    if (++n == 1 || n % 2000 == 0) log("RunFrame #%d", n);
     Engine::get().run_frame();
     return true;
 }
@@ -98,7 +100,12 @@ void __fastcall s_hscroll(void*, void*, int) {}
 void __fastcall s_vscroll(void*, void*, int) {}
 void __fastcall s_focus(void* self, void*, bool f) { BROWSER(self); b->set_focus(f); }
 void __fastcall s_add_header(void* self, void*, const char* n, const char* v) { BROWSER(self); b->add_header(n, v); }
-void __fastcall s_paint_response(void* self, void*, int t) { BROWSER(self); b->needs_paint_response(t); }
+void __fastcall s_paint_response(void* self, void*, int t) {
+    static int n = 0;
+    if (++n <= 3) log("NeedsPaintResponse %d from the game", t);
+    BROWSER(self);
+    b->needs_paint_response(t);
+}
 void __fastcall s_start_request_response(void* self, void*, bool r) { BROWSER(self); b->start_request_response(r); }
 void __fastcall s_request_sizes(void* self, void*) { BROWSER(self); b->request_sizes(); }
 void __fastcall s_js_dialog_response(void* self, void*, int r) { BROWSER(self); b->js_dialog_response(r); }
@@ -109,8 +116,10 @@ bool vtable_in_module(void** vt, int slots, HMODULE m) {
         HMODULE owner = nullptr;
         if (!GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
                                 static_cast<LPCWSTR>(vt[i]), &owner) ||
-            owner != m)
+            owner != m) {
+            log("vtable %p slot %d = %p is outside chromehtml.dll (%p)", vt, i, vt[i], owner);
             return false;
+        }
     }
     return true;
 }
@@ -123,6 +132,7 @@ bool check_compatible(void* controller, void** controller_vtbl, HMODULE chromeht
         return false;
     }
     void** ser = find_vtable(chromehtml, ".?AVHTMLSerializer@@", 4);
+    log("HTMLSerializer IHTMLSerializer vtable: %p", ser);
     if (!ser || !vtable_in_module(ser, kSerializerSlots, chromehtml)) {
         log("incompatible: HTMLSerializer (IHTMLSerializer at +4) not found");
         return false;
@@ -137,7 +147,7 @@ bool install_hooks(void* controller, void** controller_vtbl, HMODULE chromehtml)
 
     g_ser_orig = new void*[kSerializerSlots];
     std::memcpy(g_ser_orig, ser, sizeof(void*) * kSerializerSlots);
-    void* ser_slots[kSerializerSlots] = {
+    void* ser_slots[] = {
         g_ser_orig[0],  // GetResponseTarget: the original returns the object's IHTMLResponses (+0)
         &s_get_index, &s_position, &s_post_url, &s_error_strings, &s_stop, &s_reload, &s_back, &s_forward,
         &s_mouse_down, &s_mouse_up, &s_mouse_wheel, &s_mouse_move, &s_mouse_dbl, &s_size, &s_key_up, &s_key_down,

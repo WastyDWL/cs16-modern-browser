@@ -1,4 +1,4 @@
-#include "core/browser.h"
+﻿#include "core/browser.h"
 
 #include <windows.h>
 
@@ -6,6 +6,7 @@
 #include "core/keymap.h"
 #include "core/main_thread_queue.h"
 #include "core/view_math.h"
+#include "core/vgui_panel.h"
 #include "include/cef_parser.h"
 #include "include/wrapper/cef_helpers.h"
 
@@ -108,6 +109,7 @@ void Browser::set_size(int w, int h) {
         width_ = s.width;
         height_ = s.height;
     }
+    log("browser %d: size %dx%d", id_, s.width, s.height);
     if (auto hst = host()) hst->WasResized();
 }
 
@@ -155,6 +157,8 @@ void Browser::mouse_double_click(int code) {
 }
 
 void Browser::mouse_wheel(int delta) {
+    static int n = 0;
+    if (++n <= 5) log("browser %d: wheel %d at %d,%d", id_, delta, mouse_x_, mouse_y_);
     auto h = host();
     if (!h) return;
     CefMouseEvent e;
@@ -229,12 +233,23 @@ void Browser::get_link_at(int x, int y) {
     if (target_) target_->BrowserLinkAtPositionResponse("", x, y);
 }
 
-void Browser::request_sizes() {}
+void Browser::request_sizes() {
+    // The panel lays out its scrollbars (and then calls BrowserSize with its real size) from
+    // these answers. Chromium draws its own scrollbars, so report nothing to scroll.
+    if (!target_) return;
+    target_->BrowserHorizontalScrollBarSizeResponse(0, 0, 0, 0, 0, 0, 1.0f);
+    target_->BrowserVerticalScrollBarSizeResponse(0, 0, 0, 0, 0, 0, 1.0f);
+    target_->BrowserGetZoomResponse(1.0f);
+}
 
 void Browser::deliver_frame() {
     if (closed_ || !target_) return;
+    // Panels created before nextchromium loaded never send BrowserSize again; follow the panel.
+    int pw = 0, ph = 0;
+    if (vgui_panel_size(target_, pw, ph) && pw > 0 && ph > 0) set_size(pw, ph);
     frame_.deliver_if_ready([this](int tex, int w, int h, const unsigned char* bgra) {
-        target_->BrowserNeedsPaint(tex, w, h, bgra, 0, 0, 0, 0, 0, 0, nullptr);
+        // Full-frame update rect, like the original chromehtml.
+        target_->BrowserNeedsPaint(tex, w, h, bgra, 0, 0, w, h, 0, 0, nullptr);
     });
 }
 
@@ -259,6 +274,8 @@ bool Browser::GetScreenPoint(CefRefPtr<CefBrowser>, int vx, int vy, int& sx, int
 
 void Browser::OnPaint(CefRefPtr<CefBrowser>, PaintElementType type, const RectList&, const void* buffer, int width,
                       int height) {
+    static std::atomic<int> paints{0};
+    if (++paints <= 3) log("browser %d: OnPaint %s %dx%d", id_, type == PET_VIEW ? "view" : "popup", width, height);
     if (type == PET_VIEW) frame_.store(buffer, width, height);
     else frame_.store_popup(buffer, width, height);
 }
@@ -296,7 +313,12 @@ void Browser::OnAfterCreated(CefRefPtr<CefBrowser> browser) {
     }
     browser->GetHost()->WasResized();
     if (!url.empty()) load(url, post);
-    to_game([](IHTMLResponses_HL1* t) { t->BrowserReady(); });
+    CefRefPtr<Browser> self(this);
+    queue_.post([self] {
+        if (self->closed_ || !self->target_) return;
+        self->target_->BrowserReady();
+        self->request_sizes();
+    });
 }
 
 bool Browser::DoClose(CefRefPtr<CefBrowser>) {
@@ -325,7 +347,12 @@ void Browser::OnLoadingStateChange(CefRefPtr<CefBrowser> browser, bool loading, 
     CefRefPtr<CefNavigationEntry> entry = browser->GetHost()->GetVisibleNavigationEntry();
     std::string url = browser->GetMainFrame()->GetURL().ToString();
     std::string title = entry ? entry->GetTitle().ToString() : "";
-    to_game([url, title](IHTMLResponses_HL1* t) { t->BrowserFinishedRequest(url.c_str(), title.c_str()); });
+    CefRefPtr<Browser> self(this);
+    queue_.post([self, url, title] {
+        if (self->closed_ || !self->target_) return;
+        self->target_->BrowserFinishedRequest(url.c_str(), title.c_str());
+        self->request_sizes();
+    });
 }
 
 void Browser::OnLoadError(CefRefPtr<CefBrowser>, CefRefPtr<CefFrame> frame, ErrorCode code, const CefString& text,

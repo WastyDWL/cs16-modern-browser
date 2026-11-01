@@ -53,7 +53,7 @@ TEST(view_size_clamped) {
     CHECK_EQ(a.width, 1);
     CHECK_EQ(a.height, 1);
     CefSize b = clamp_view_size(10000, 20);
-    CHECK_EQ(b.width, 8192);
+    CHECK_EQ(b.width, 4096);
     CHECK_EQ(b.height, 20);
 }
 

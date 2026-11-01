@@ -13,7 +13,7 @@
 3. **Окно MOTD создаёт сериализатор и браузер при старте клиента**, до загрузки `.asi`.
    Поэтому перехватывать нужно класс, а не фабрику.
 4. **Класс `HTMLSerializer`** (RTTI `.?AVHTMLSerializer@@`): по смещению +0 — `IHTMLResponses`,
-   по +4 — `IHTMLSerializer` (29 слотов, без деструктора). Для `this` подобъекта
+   по +4 — `IHTMLSerializer` (28 слотов, без деструктора; слот 23 — NeedsPaintResponse, 24 — StartRequestResponse). Для `this` подобъекта
    `IHTMLSerializer` (адрес объекта + 4):
    - `this+0x4` — индекс браузера (`65536` у MOTD);
    - `this+0x8` — указатель на `CHTMLController`;

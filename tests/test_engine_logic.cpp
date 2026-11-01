@@ -81,17 +81,21 @@ TEST(paint_nothing_new_nothing_sent) {
     CHECK_EQ(calls, 1);
 }
 
-TEST(paint_stale_response_ignored) {
+TEST(paint_texture_id_is_zero) {
+    // HL1's chromehtml always sends textureid 0; vgui2::HTML treats non-zero ids as
+    // ready-made surface textures and draws those instead of the pixels (blank panel).
     FrameBuffer fb;
     uint32_t px = 1;
-    int calls = 0, tex = 0;
+    int calls = 0, tex = -1;
     auto deliver = [&](int t, int, int, const unsigned char*) { ++calls; tex = t; };
     fb.store(&px, 1, 1);
     fb.deliver_if_ready(deliver);
+    CHECK_EQ(tex, 0);
     fb.store(&px, 1, 1);
-    fb.on_response(tex + 100);  // not ours
+    fb.on_response(0);
     fb.deliver_if_ready(deliver);
-    CHECK_EQ(calls, 1);
+    CHECK_EQ(calls, 2);
+    CHECK_EQ(tex, 0);
 }
 
 TEST(paint_popup_composited) {

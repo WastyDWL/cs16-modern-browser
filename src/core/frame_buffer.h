@@ -20,7 +20,9 @@ public:
     void hide_popup();
 
     // Main thread: hands the composited frame to `deliver` if there is a new one and the game
-    // acknowledged the previous one. The pointer is valid only during the call.
+    // acknowledged the previous one. The pointer is valid only during the call. texture_id is
+    // always 0, as HL1's chromehtml sends it: vgui2::HTML would draw a non-zero id as an
+    // existing surface texture instead of the pixels.
     void deliver_if_ready(const DeliverFn& deliver);
     // Main thread: the game's NeedsPaintResponse(texture_id).
     void on_response(int texture_id);
@@ -32,8 +34,7 @@ private:
     int px_ = 0, py_ = 0, prw_ = 0, prh_ = 0;
     bool popup_visible_ = false;
     bool dirty_ = false;
-    int in_flight_ = 0;  // texture id awaiting the game's response, 0 = none
-    int next_id_ = 1;
+    bool in_flight_ = false;  // a frame was handed to the game and not acknowledged yet
 };
 
 }  // namespace nc
