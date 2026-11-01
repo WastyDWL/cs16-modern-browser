@@ -33,7 +33,7 @@ public:
     Browser(int id, IHTMLResponses_HL1* target, MainThreadQueue& queue);
 
     // --- main thread ---
-    void create(int frame_rate, double zoom_level);
+    void create(int frame_rate, double zoom_level, bool fit_width);
     void close();  // the panel is gone: no more callbacks into the game
     int index() const;  // -1 until the CEF browser exists
     void post_url(const char* url, const char* post_data);
@@ -95,6 +95,7 @@ public:
 
     // --- CefLoadHandler ---
     void OnLoadingStateChange(CefRefPtr<CefBrowser> browser, bool loading, bool back, bool forward) override;
+    void OnLoadEnd(CefRefPtr<CefBrowser> browser, CefRefPtr<CefFrame> frame, int http_status) override;
     void OnLoadError(CefRefPtr<CefBrowser> browser, CefRefPtr<CefFrame> frame, ErrorCode code,
                      const CefString& text, const CefString& failed_url) override;
 
@@ -155,6 +156,7 @@ private:
     int mouse_x_ = 0, mouse_y_ = 0;  // main thread
     int mods_ = 0;
     double zoom_level_ = 0;  // set before create(), read on the CEF UI thread
+    bool fit_width_ = false;
     bool buttons_[3] = {};
 
     IMPLEMENT_REFCOUNTING(Browser);

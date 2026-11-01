@@ -14,6 +14,20 @@ namespace nc {
 
 namespace {
 
+// Shrinks a page that is wider than the panel (fixed-width tables in MOTD pages) with CSS zoom,
+// so it fits without horizontal scrolling. Re-checked once late content (images, fonts) settled.
+constexpr char kFitWidthScript[] = R"JS((function () {
+  var d = document.documentElement;
+  function fit() {
+    if (!document.body) return;
+    d.style.zoom = '';
+    var w = window.innerWidth, sw = Math.max(d.scrollWidth, document.body.scrollWidth);
+    if (sw > w + 1) d.style.zoom = (w / sw).toFixed(4);
+  }
+  fit();
+  setTimeout(fit, 600);
+})();)JS";
+
 std::string error_page(const ErrorStrings& e, const std::string& detail) {
     return "<html><head><meta charset=\"utf-8\"><title>" + e.title + "</title></head><body><h1>" + e.header +
            "</h1>" + detail + "</body></html>";
@@ -41,8 +55,9 @@ CefRefPtr<CefBrowser> Browser::cef_browser() {
     return browser_;
 }
 
-void Browser::create(int frame_rate, double zoom_level) {
+void Browser::create(int frame_rate, double zoom_level, bool fit_width) {
     zoom_level_ = zoom_level;
+    fit_width_ = fit_width;
     CefWindowInfo info;
     info.SetAsWindowless(nullptr);
     CefBrowserSettings settings;
@@ -354,6 +369,10 @@ void Browser::OnLoadingStateChange(CefRefPtr<CefBrowser> browser, bool loading, 
         self->target_->BrowserFinishedRequest(url.c_str(), title.c_str());
         self->request_sizes();
     });
+}
+
+void Browser::OnLoadEnd(CefRefPtr<CefBrowser>, CefRefPtr<CefFrame> frame, int) {
+    if (fit_width_ && frame->IsMain()) frame->ExecuteJavaScript(kFitWidthScript, frame->GetURL(), 0);
 }
 
 void Browser::OnLoadError(CefRefPtr<CefBrowser>, CefRefPtr<CefFrame> frame, ErrorCode code, const CefString& text,

@@ -51,6 +51,7 @@ Config parse_config(std::string_view ini_text, std::wstring_view cmdline) {
         if (key == "enabled") c.enabled = to_int(value, 1) != 0;
         else if (key == "frame_rate") c.frame_rate = std::clamp(to_int(value, 60), 1, 240);
         else if (key == "debug_port") c.debug_port = std::clamp(to_int(value, 0), 0, 65535);
+        else if (key == "fit_width") c.fit_width = to_int(value, 1) != 0;
         else if (key == "zoom") c.zoom_percent = std::clamp(to_int(value, 90), 25, 300);
     }
     if (has_switch(cmdline, L"-nonextchromium")) c.enabled = false;

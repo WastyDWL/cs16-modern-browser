@@ -70,3 +70,8 @@ TEST(zoom_percent_to_chromium_level) {
     CHECK(std::abs(zoom_level(120) - 1.0) < 1e-9);
     CHECK(std::abs(std::pow(1.2, zoom_level(90)) - 0.9) < 1e-9);
 }
+
+TEST(config_fit_width) {
+    CHECK(parse_config("", L"").fit_width);
+    CHECK(!parse_config("[main]\nfit_width=0\n", L"").fit_width);
+}

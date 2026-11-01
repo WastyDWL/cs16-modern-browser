@@ -11,6 +11,7 @@ struct Config {
     int frame_rate = 60;  // 1..240, CEF windowless_frame_rate
     int debug_port = 0;   // 0 = remote debugging off
     int zoom_percent = 90;  // 25..300; pages are laid out for desktop widths, game panels are small
+    bool fit_width = true;  // shrink pages wider than the panel so no horizontal scrolling is needed
 };
 
 // Chromium zoom level for a percentage (scale = 1.2 ^ level).

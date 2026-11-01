@@ -29,6 +29,8 @@ enabled=1
 frame_rate=60
 ; page scale in percent (25-300); 90 fits typical MOTD pages into the 720px window
 zoom=90
+; 1 = shrink pages wider than the window (fixed-width MOTD tables) so they fit without scrolling
+fit_width=1
 ; Chrome DevTools at http://127.0.0.1:<port> (0 = off)
 debug_port=0
 "@
