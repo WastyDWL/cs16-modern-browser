@@ -1,0 +1,3 @@
+add_executable(ncb_harness main.cpp)
+target_link_libraries(ncb_harness PRIVATE nc_core)
+SET_EXECUTABLE_TARGET_PROPERTIES(ncb_harness)

@@ -255,7 +255,7 @@ void start(HMODULE self) {
     GetModuleFileNameW(self, path, MAX_PATH);
     *wcsrchr(path, L'\\') = 0;
     std::wstring log_path = std::wstring(path) + L"\\nextchromium_spike.log";
-    nc::log_open(log_path.c_str());
+    nc::log_open(log_path.c_str(), true);
     nc::log("spike asi loaded; cmdline=%s", GetCommandLineA());
     for (const wchar_t* m : {L"hw.dll", L"chromehtml.dll", L"libcef.dll", L"client.dll", L"GameUI.dll",
                              L"next_engine_mini.dll", L"vgui2.dll", L"nitro_api2.dll"})

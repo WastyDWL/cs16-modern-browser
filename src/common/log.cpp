@@ -12,10 +12,10 @@ std::mutex g_mutex;
 FILE* g_file = nullptr;
 }  // namespace
 
-void log_open(const wchar_t* path) {
+void log_open(const wchar_t* path, bool truncate) {
     std::lock_guard lock(g_mutex);
     if (g_file) return;
-    g_file = _wfsopen(path, L"w", _SH_DENYWR);
+    g_file = _wfsopen(path, truncate ? L"w" : L"a", _SH_DENYNO);
 }
 
 void log(const char* fmt, ...) {
